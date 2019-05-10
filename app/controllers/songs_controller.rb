@@ -16,6 +16,7 @@ class SongsController < ApplicationController
     if params[:artist_id]
       @artist = Artist.find_by(id: params[:artist_id])
       @song = @artist.songs.find_by(id: params[:id])
+      # binding.pry
       if @song.nil?
         redirect_to artist_songs_path(@artist), alert: "Song not found"
       end
@@ -25,8 +26,18 @@ class SongsController < ApplicationController
   end
 
   def new
-    @song = Song.new
-  end
+     if params[:artist_id]
+       @artist = Artist.find_by(id: params[:artist_id])
+       if @artist
+         @song = Song.new(artist_id: params[:artist_id])
+       else
+         flash[:alert] = "Artist not found"
+         redirect_to artists_path
+       end
+     else
+       @song = Song.new
+     end
+   end
 
   def create
     @song = Song.new(song_params)
@@ -39,20 +50,44 @@ class SongsController < ApplicationController
   end
 
   def edit
-    @song = Song.find(params[:id])
-  end
-
-  def update
-    @song = Song.find(params[:id])
-
-    @song.update(song_params)
-
-    if @song.save
-      redirect_to @song
+    if params[:artist_id]
+      @artist = Artist.find_by(id: params[:artist_id])
+      if @artist
+        @song = Song.find_by(id: params[:id])
+        redirect_to artist_songs_path(@artist), alert: "Song not found" if @song.nil?
+      else
+        redirect_to artists_path, alert: "Artist not found"
+      end
     else
-      render :edit
+      @song = Song.find(params[:id])
     end
   end
+
+  # def update
+  #   @song = Song.find(params[:id])
+  #   @song.update(params.require(:song))
+  #   redirect_to song_path(song)
+
+    def update
+   @song = Song.find(params[:id])
+
+   @song.update(song_params)
+
+   if @song.save
+     redirect_to @song
+   else
+     render :edit
+   end
+ end
+
+    # @song.update(song_params)
+    #
+    # if @song.save
+    #   redirect_to @song
+    # else
+    #   render :edit
+    # end
+
 
   def destroy
     @song = Song.find(params[:id])
@@ -64,7 +99,6 @@ class SongsController < ApplicationController
   private
 
   def song_params
-    params.require(:song).permit(:title, :artist_name)
+    params.require(:song).permit(:title, :artist_name, :artist_id)
   end
 end
-
